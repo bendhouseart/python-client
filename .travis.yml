@@ -23,6 +23,7 @@ env:
     - INSTALL_TYPE="develop"
     - INSTALL_TYPE="sdist"
     - INSTALL_TYPE="wheel"
+    - INSTALL_TYPE="pipdev"
     - INSTALL_DEPENDS="pip==18.1 setuptools==30.2.1"
     - INSTALL_DEPENDS="pip==10.0.1 setuptools==30.3.0"
 
@@ -49,7 +50,9 @@ install:
     elif [ "$INSTALL_TYPE" == "develop" ]; then
         python setup.py develop
     elif [ "$INSTALL_TYPE" == "pip" ]; then
-        pip install .
+        pip install -vvv .
+    elif [ "$INSTALL_TYPE" == "pipdev" ]; then
+        pip install -vvv -e .
     elif [ "$INSTALL_TYPE" == "sdist" ]; then
         python setup.py sdist
         pip install dist/*.tar.gz
