@@ -2,17 +2,15 @@ import argparse
 from glob import glob
 import os
 from pathlib import Path
+import shutil
 import subprocess as sp
-import sys
 from tempfile import mkdtemp
 from textwrap import dedent
 import uuid
-import warnings
 
 from .api import get as tfget
-from datalad.api import addurls
-from datalad_osf.utils import url_from_key, json_from_url, get_osf_recursive, osf_to_csv
-import templateflow.api as tf
+import datalad.api as dapi
+from datalad_osf.utils import url_from_key, json_from_url
 
 TEMPLATEFLOW_PROJECT_KEY = "ue5gx"
 
@@ -25,7 +23,7 @@ def get(template=None, **kwargs):
     Additional key-value pairs can be specified with `--kwargs`.
     $ templateflow get fsLR --kwargs desc=nomedialwall suffix=dparc
     """
-    fls = tfget(template[4:], **pargs.kwargs)
+    fls = tfget(template[4:], **kwargs)
     print(
         "Got {} files{}{}".format(
             len(fls), ":\n" if fls else "", "\n".join([str(f) for f in fls if f])
@@ -88,7 +86,7 @@ def upload(
     hits = ["name,link"]
     items = json_from_url(url)["data"]
     while items:
-        item = items.pop()
+        item = items.pop(0)
         # expand folders
         if item["attributes"]["kind"] == "folder":
             items += json_from_url(item["links"]["move"])["data"]
@@ -96,7 +94,6 @@ def upload(
         name = item["attributes"]["name"]
         if template in name:
             link = item["links"]["download"]
-            path = item["attributes"]["materialized"]
             hits.append(",".join((name, link)))
 
     output_filename = "tfupload-{}.csv".format(uuid.uuid4())
@@ -114,7 +111,8 @@ def upload(
     for f in files:
         shutil.copy2(f, tmp)
 
-    addurls(None, output_filename, '{link}', '{name}', message=message)
+    dapi.addurls(None, output_filename, '{link}', '{name}', message=message)
+    dapi.publish()
 
 
 def main(pargs=None):
